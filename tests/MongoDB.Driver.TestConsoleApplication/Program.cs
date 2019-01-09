@@ -24,20 +24,22 @@ namespace MongoDB.Driver.TestConsoleApplication
     {
         static void Main(string[] args)
         {
-            //FilterMeasuring.TestAsync().GetAwaiter().GetResult();
-            int numConcurrentWorkers = 50;
-            //new CoreApi().Run(numConcurrentWorkers, ConfigureCluster);
-            new CoreApiSync().Run(numConcurrentWorkers, ConfigureCluster);
+            MongoClient c = new MongoClient();
+            Console.WriteLine(c);
+            ////FilterMeasuring.TestAsync().GetAwaiter().GetResult();
+            //int numConcurrentWorkers = 50;
+            ////new CoreApi().Run(numConcurrentWorkers, ConfigureCluster);
+            //new CoreApiSync().Run(numConcurrentWorkers, ConfigureCluster);
 
-            new Api().Run(numConcurrentWorkers, ConfigureCluster);
+            //new Api().Run(numConcurrentWorkers, ConfigureCluster);
 
-            //new LegacyApi().Run(numConcurrentWorkers, ConfigureCluster);
+            ////new LegacyApi().Run(numConcurrentWorkers, ConfigureCluster);
         }
 
         private static void ConfigureCluster(ClusterBuilder cb)
         {
 #if NET452
-            cb.UsePerformanceCounters("test", true);
+           // cb.UsePerformanceCounters("test", true);
 #endif
         }
     }

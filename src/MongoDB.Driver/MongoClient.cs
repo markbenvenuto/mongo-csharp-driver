@@ -75,6 +75,8 @@ namespace MongoDB.Driver
         /// <param name="settings">The settings.</param>
         public MongoClient(MongoClientSettings settings)
         {
+            Console.WriteLine("BSON Version: " + LibMongoCrypt.GetBsonVersion());
+
             _settings = Ensure.IsNotNull(settings, nameof(settings)).FrozenCopy();
             _cluster = ClusterRegistry.Instance.GetOrCreateCluster(_settings.ToClusterKey());
             _operationExecutor = new OperationExecutor(this);
