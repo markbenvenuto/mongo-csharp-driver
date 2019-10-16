@@ -451,6 +451,10 @@ namespace MongoDB.Driver
                         credential,
                         _mechanismProperties.Select(x => new KeyValuePair<string, string>(x.Key, x.Value.ToString())));
                 }
+                else if (_mechanism == MongoIAMAuthenticator.MechanismName)
+                {
+                    return new MongoIAMAuthenticator(credential);
+                }
             }
             else if (_identity.Source == "$external" && _evidence is ExternalEvidence)
             {
