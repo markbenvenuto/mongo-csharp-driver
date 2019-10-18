@@ -74,6 +74,20 @@ namespace MongoDB.Driver.Core.Authentication
             return kSigningBlock;
         }
 
+        private static string getRegion(string host)
+        {
+            if ( host == "sts.amazonaws.com")
+            {
+                return "us-east-1";
+            } else if ( host.Contains(".") )
+            {
+                throw new NotImplementedException();
+            } else
+            {
+                return "us-east-1";
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -81,10 +95,11 @@ namespace MongoDB.Driver.Core.Authentication
         /// <param name="secretKey"></param>
         /// <param name="securityToken"></param>
         /// <param name="salt"></param>
+        /// <param name="host"></param>
         /// <returns></returns>
-        public static Tuple<string, string> SignRequest(string accessKey, string secretKey, string securityToken, byte[] salt)
+        public static Tuple<string, string> SignRequest(string accessKey, string secretKey, string securityToken, byte[] salt, string host)
         {
-            return SignRequest(DateTime.UtcNow, accessKey, secretKey, securityToken, salt);
+            return SignRequest(DateTime.UtcNow, accessKey, secretKey, securityToken, salt, host);
         }
 
 
@@ -96,16 +111,14 @@ namespace MongoDB.Driver.Core.Authentication
         /// <param name="secretKey"></param>
         /// <param name="securityToken"></param>
         /// <param name="salt"></param>
+        /// <param name="host"></param>
         /// <returns></returns>
-        public static Tuple<string, string> SignRequest(DateTime now, string accessKey, string secretKey, string securityToken, byte[] salt)
+        public static Tuple<string, string> SignRequest(DateTime now, string accessKey, string secretKey, string securityToken, byte[] salt, string host)
         {
             const string method = "POST";
 
             const string service = "sts";
-            const string region = "us-east-1";  //  TODO - Need to locate region
-
-            // IMPORTANT: host may vary from the default sts.amazonaws.com. The service is always sts no matter what the host is
-            var host = String.Format(CultureInfo.InvariantCulture, "{0}.amazonaws.com", service);
+            string region = getRegion(host);
 
             const string contentType = "application/x-www-form-urlencoded";
             const string body = "Action=GetCallerIdentity&Version=2011-06-15";
@@ -130,8 +143,8 @@ namespace MongoDB.Driver.Core.Authentication
                 signedHeadersBuilder.AppendFormat(CultureInfo.InvariantCulture, ";x-amz-security-token");
             }
 
-            canonicalHeadersBuilder.AppendFormat(CultureInfo.InvariantCulture, "x-mongodb-server-salt:{0}\n", System.Convert.ToBase64String(salt));
-            signedHeadersBuilder.AppendFormat(CultureInfo.InvariantCulture, ";x-mongodb-server-salt");
+            canonicalHeadersBuilder.AppendFormat(CultureInfo.InvariantCulture, "x-mongodb-gs2-cb-flag:{0}\nx-mongodb-server-nonce:{1}\n", "n", System.Convert.ToBase64String(salt));
+            signedHeadersBuilder.AppendFormat(CultureInfo.InvariantCulture, ";x-mongodb-gs2-cb-flag;x-mongodb-server-nonce");
 
             string canonicalHeaders = canonicalHeadersBuilder.ToString();
             string signedHeaders = signedHeadersBuilder.ToString();
@@ -228,6 +241,10 @@ namespace MongoDB.Driver.Core.Authentication
                 var nonce = UTF8Encoding.UTF8.GetBytes(r);
                 ClientFirstMessage first = new ClientFirstMessage() { r = nonce, p = 'n' };
                 var doc = first.ToBsonDocument();
+
+                Console.WriteLine("Client First: " + doc);
+
+
                 var clientFirstMessageBytes = ASCIIEncoding.ASCII.GetBytes(System.Convert.ToBase64String(ToBytes(doc)));
 
                 return new ClientFirst(clientFirstMessageBytes, nonce, _credential);
@@ -312,11 +329,15 @@ namespace MongoDB.Driver.Core.Authentication
 
                 var bytes = System.Convert.FromBase64CharArray(chars, 0, chars.Length);
                 var serverFirstMessageDoc = ToDocument(bytes);
+
+                Console.WriteLine("Server First: " + serverFirstMessageDoc);
+
                 byte[] serverNonce = serverFirstMessageDoc["s"].AsByteArray;
+                string host = serverFirstMessageDoc["h"].AsString;
 
                 // TODO - validate serverNonce
 
-                var tuple = AwsSigV4.SignRequest(_credential.Username, _credential.GetInsecurePassword(), null, serverNonce);
+                var tuple = AwsSigV4.SignRequest(_credential.Username, _credential.GetInsecurePassword(), null, serverNonce, host);
 
                 ClientSecondMessage second = new ClientSecondMessage()
                 {
@@ -325,6 +346,9 @@ namespace MongoDB.Driver.Core.Authentication
                 };
 
                 var doc = second.ToBsonDocument();
+
+                Console.WriteLine("Client Second: " + doc);
+
                 var clientSecondMessageBytes = ASCIIEncoding.ASCII.GetBytes(System.Convert.ToBase64String(ToBytes(doc)));
 
                 return new ClientLast(clientSecondMessageBytes);
