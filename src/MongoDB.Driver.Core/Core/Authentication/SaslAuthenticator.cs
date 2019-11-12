@@ -75,6 +75,7 @@ namespace MongoDB.Driver.Core.Authentication
                     BsonDocument result;
                     try
                     {
+                        Console.WriteLine("Command: " + command.ToJson<BsonDocument>());
                         var protocol = CreateCommandProtocol(command);
                         result = protocol.Execute(connection, cancellationToken);
                     }
@@ -83,6 +84,7 @@ namespace MongoDB.Driver.Core.Authentication
                         throw CreateException(connection, ex);
                     }
 
+                    Console.WriteLine("Response: " + result.ToJson<BsonDocument>());
                     currentStep = Transition(conversation, currentStep, result);
                     if (currentStep == null)
                     {
@@ -110,6 +112,7 @@ namespace MongoDB.Driver.Core.Authentication
                     BsonDocument result;
                     try
                     {
+                        Console.WriteLine(command.ToString());
                         var protocol = CreateCommandProtocol(command);
                         result = await protocol.ExecuteAsync(connection, cancellationToken).ConfigureAwait(false);
                     }

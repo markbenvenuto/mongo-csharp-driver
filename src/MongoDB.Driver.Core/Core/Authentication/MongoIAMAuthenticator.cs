@@ -243,9 +243,11 @@ namespace MongoDB.Driver.Core.Authentication
                 var doc = first.ToBsonDocument();
 
                 Console.WriteLine("Client First: " + doc);
+                Console.WriteLine("Client First Bytes: " + System.Convert.ToBase64String(ToBytes(doc)));
 
 
-                var clientFirstMessageBytes = ASCIIEncoding.ASCII.GetBytes(System.Convert.ToBase64String(ToBytes(doc)));
+                //var clientFirstMessageBytes = ASCIIEncoding.ASCII.GetBytes(System.Convert.ToBase64String(ToBytes(doc)));
+                var clientFirstMessageBytes = ToBytes(doc);
 
                 return new ClientFirst(clientFirstMessageBytes, nonce, _credential);
             }
@@ -326,9 +328,11 @@ namespace MongoDB.Driver.Core.Authentication
             {
                 char[] chars = new char[bytesReceivedFromServer.Length];
                 Array.Copy(bytesReceivedFromServer, chars, bytesReceivedFromServer.Length);
+                
+                Console.WriteLine("Server First Bytes: " + System.Convert.ToBase64String(bytesReceivedFromServer));
 
-                var bytes = System.Convert.FromBase64CharArray(chars, 0, chars.Length);
-                var serverFirstMessageDoc = ToDocument(bytes);
+                //var bytes = System.Convert.FromBase64CharArray(chars, 0, chars.Length);
+                var serverFirstMessageDoc = ToDocument(bytesReceivedFromServer);
 
                 Console.WriteLine("Server First: " + serverFirstMessageDoc);
 
@@ -349,7 +353,11 @@ namespace MongoDB.Driver.Core.Authentication
 
                 Console.WriteLine("Client Second: " + doc);
 
-                var clientSecondMessageBytes = ASCIIEncoding.ASCII.GetBytes(System.Convert.ToBase64String(ToBytes(doc)));
+                var clientSecondMessageBytes = ToBytes(doc);
+
+                Console.WriteLine("Client Second Bytes: " + System.Convert.ToBase64String(ToBytes(doc)));
+                //var clientSecondMessageBytes = ASCIIEncoding.ASCII.GetBytes(System.Convert.ToBase64String(ToBytes(doc)));
+                //Console.WriteLine("Client Second Bytes: " + System.Convert.ToBase64String(ToBytes(doc)));
 
                 return new ClientLast(clientSecondMessageBytes);
             }

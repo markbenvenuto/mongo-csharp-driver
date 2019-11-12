@@ -36,7 +36,8 @@ namespace MongoDB.Driver.TestConsoleApplication
             ///
             MongoClientSettings settings = new MongoClientSettings();
             //settings.UseTls = true;
-            settings.Server = new MongoServerAddress("10.1.2.19", 27017);
+            //settings.Server = new MongoServerAddress("10.1.2.19", 27017);
+            settings.Server = new MongoServerAddress("127.0.0.1", 27017);
             settings.Credential = new MongoCredential("MONGODB-IAM", 
                 new MongoExternalIdentity(
                     Environment.GetEnvironmentVariable("AWS_ACCESS_KEY_ID")), 
